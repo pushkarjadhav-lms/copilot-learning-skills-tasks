@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { fetchApiCollection } from '../api.js';
 
 export default function Leaderboard() {
   const [entries, setEntries] = useState([]);
@@ -8,9 +7,28 @@ export default function Leaderboard() {
 
   useEffect(() => {
     let active = true;
+    const codespaceName = import.meta.env.VITE_CODESPACE_NAME?.trim();
+    const apiUrl = codespaceName
+      ? `https://${codespaceName}-8000.app.github.dev/api/leaderboard/`
+      : 'http://localhost:8000/api/leaderboard/';
 
-    fetchApiCollection('leaderboard')
-      .then((data) => {
+    fetch(apiUrl)
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error(`Request failed: ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const data = Array.isArray(payload)
+          ? payload
+          : Array.isArray(payload.results)
+            ? payload.results
+            : Array.isArray(payload.items)
+              ? payload.items
+              : Array.isArray(payload.data)
+                ? payload.data
+                : [];
+
         if (active) {
           setEntries(data);
           setLoading(false);
